@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EV Project Ayush — Autonomous Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    .font-mono-num { font-family: 'JetBrains Mono', monospace; }
+    
+    @keyframes slideUp { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+    .animate-slide-up { opacity: 0; animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .delay-100 { animation-delay: 0.1s; } .delay-200 { animation-delay: 0.2s; } .delay-300 { animation-delay: 0.3s; }
+
+    @keyframes pulseGlow { 0%, 100% { opacity: 0.8; filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5)); transform: scale(1); } 50% { opacity: 1; filter: drop-shadow(0 0 16px rgba(59, 130, 246, 0.9)); transform: scale(1.05); } }
+    .charging-pulse { animation: pulseGlow 2s ease-in-out infinite; }
+
+    @keyframes energyFlow { 0% { background-position: 200% center; } 100% { background-position: -200% center; } }
+    .bg-energy-flow { background: linear-gradient(90deg, #2563eb 0%, #60a5fa 25%, #2563eb 50%, #60a5fa 75%, #2563eb 100%); background-size: 200% auto; animation: energyFlow 3s linear infinite; }
+    .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 24px -8px rgba(0,0,0,0.05); }
+
+    .circular-chart { display: block; margin: 0 auto; max-width: 100%; max-height: 120px; }
+    .circle-bg { fill: none; stroke: #e2e8f0; stroke-width: 3.8; }
+    .circle { fill: none; stroke-width: 2.8; stroke-linecap: round; transition: stroke-dasharray 1s ease-out, stroke 0.5s; }
+  </style>
+</head>
+<body class="text-slate-900 min-h-screen flex flex-col selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
+
+  <header class="bg-white/90 backdrop-blur-xl border-b border-slate-200/80 sticky top-0 z-50 animate-slide-up">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <div class="flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20 hover:scale-105 transition-transform">
+          <svg class="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2.5">
+            <span class="font-black text-xl tracking-tight text-slate-900">EV Project Ayush</span>
+          </div>
+          <p class="text-sm text-slate-500 font-medium">Autonomous Smart Grid & ML Hub</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-5">
+        <div class="hidden sm:flex flex-col text-right">
+          <span class="text-sm font-bold text-slate-800 font-mono-num tracking-tight" id="clock-mode-label">Telemetry Clock</span>
+          <span class="text-xs font-bold text-slate-500" id="telemetry-time">Day: -- | Time: --:00</span>
+        </div>
+        <div class="flex items-center space-x-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold shadow-sm">
+          <span class="relative flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span></span>
+          <span id="sync-label">System Active</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- STATION CAPACITY -->
+      <div class="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-8 shadow-sm hover-lift animate-slide-up delay-100 flex flex-col justify-between">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 tracking-tight">Station Grid Capacity</h2>
+            <p class="text-sm text-slate-500 mt-0.5">Fixed 30,000W limit - mathematical subtraction</p>
+          </div>
+          <span id="power-badge" class="px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">Optimal</span>
+        </div>
+
+        <div class="flex items-baseline space-x-3 mt-2">
+          <span id="remaining-power-val" class="text-6xl font-black text-slate-900 font-mono-num tracking-tighter">30000.0</span>
+          <span class="text-slate-500 font-semibold text-2xl">W</span>
+          <span class="text-sm font-medium text-slate-400 ml-2">Available Headroom</span>
+        </div>
+
+        <div class="mt-6">
+          <div class="flex justify-between items-center text-sm font-semibold text-slate-600 mb-3">
+            <span>Consumed: <strong id="consumed-text" class="text-slate-900">0 W</strong></span>
+            <span>Limit: <strong class="text-slate-900">30,000 W</strong></span>
+          </div>
+          <div class="relative flex items-center">
+            <div class="w-full h-12 bg-slate-100/80 rounded-2xl p-1.5 border border-slate-200 shadow-inner flex space-x-1.5" id="battery-cells"></div>
+            <div class="w-3 h-6 bg-slate-300 rounded-r-md -ml-1 border-y border-r border-slate-300"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ML CONGESTION PREDICTION -->
+      <div id="congestion-card" class="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-8 shadow-sm hover-lift animate-slide-up delay-200 flex flex-col justify-between transition-all duration-500">
+        <div class="flex items-start justify-between mb-2">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 tracking-tight">ML Congestion Prediction</h2>
+            <p class="text-sm text-slate-500 mt-0.5">Logistic regression demand probability</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center justify-center my-2 relative">
+          <svg viewBox="0 0 36 36" class="circular-chart">
+            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            <path id="ml-circle" class="circle" stroke-dasharray="0, 100" stroke="#3b82f6" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span id="arrival-val" class="text-3xl font-black text-slate-900 font-mono-num tracking-tight mt-1">0%</span>
+            <span class="text-[9px] uppercase font-bold text-slate-400 tracking-widest">Current</span>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 rounded-xl p-2 border border-slate-100 flex items-center justify-center text-sm mb-4">
+          <span id="arrival-desc" class="font-medium text-slate-600">Analyzing influx...</span>
+        </div>
+
+        <div class="border-t border-slate-100 pt-4">
+          <div class="flex justify-between items-center mb-2">
+            <h3 class="text-[10px] uppercase font-bold text-slate-400">Next 4 Hours Forecast</h3>
+            <span id="peak-alert" class="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-50 text-rose-600 border border-rose-100"></span>
+          </div>
+          <div class="flex justify-between items-end h-16 gap-2" id="forecast-bars"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= DYNAMIC 3-BAY GRID ================= -->
+    <section class="space-y-6 pt-4 animate-slide-up delay-300">
+      <div>
+        <h2 class="text-2xl font-black text-slate-900 tracking-tight">Active Terminals</h2>
+        <p class="text-sm font-medium text-slate-500 mt-1">Real-time edge telemetry with dynamic vehicle rendering</p>
+      </div>
+      <div id="bays-grid" class="grid grid-cols-1 md:grid-cols-3 gap-8"></div>
+    </section>
+  </main>
+
+  <script>
+    const MAX_STATION_CAPACITY_W = 30000;
+    const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const USE_RTC = false; 
+
+    // Simulation Constants
+    const UPDATE_INTERVAL_SEC = 2; // Data fetch frequency
+    const SIM_SPEED_MULTIPLIER = 180; // Speeds up charging so it's visible in demo (1 tick = 6 mins)
+
+    // Independent Bay State Tracker Array
+    if (!window.bayStates) window.bayStates = {};
+
+    function getVehicleSvg(type, isCharging, overloadActive, isFull = false) {
+      const baseColor = isCharging ? '#0f172a' : '#cbd5e1';
+      const accentColor = isCharging ? '#38bdf8' : '#e2e8f0';
+      const strokeCol = isCharging ? '#1e293b' : '#94a3b8';
+      
+      let glow = 'transparent';
+      if (isCharging && !isFull) { glow = overloadActive ? '#f59e0b' : '#3b82f6'; } 
+      else if (isFull) { glow = '#10b981'; }
+
+      const chargingFX = (isCharging && !isFull) ? `
+        <ellipse cx="120" cy="95" rx="70" ry="10" fill="${glow}" opacity="0.15" filter="blur(8px)"/>
+        <circle cx="120" cy="50" r="8" fill="${glow}" class="charging-pulse"/>
+      ` : (isFull ? `<ellipse cx="120" cy="95" rx="70" ry="10" fill="${glow}" opacity="0.2" filter="blur(8px)"/>` : '');
+
+      if (type === 3) {
+        return `<svg class="w-full h-32 mx-auto transition-transform duration-500 hover:scale-105" viewBox="0 0 240 100" fill="none"><rect x="20" y="25" width="200" height="55" rx="8" fill="${baseColor}" stroke="${strokeCol}" stroke-width="2"/><rect x="30" y="35" width="30" height="20" rx="2" fill="${accentColor}"/><rect x="70" y="35" width="30" height="20" rx="2" fill="${accentColor}"/><rect x="110" y="35" width="30" height="20" rx="2" fill="${accentColor}"/><rect x="150" y="35" width="30" height="20" rx="2" fill="${accentColor}"/><rect x="190" y="35" width="20" height="20" rx="2" fill="${accentColor}"/><circle cx="60" cy="80" r="12" fill="#0f172a" stroke="#64748b" stroke-width="2"/><circle cx="180" cy="80" r="12" fill="#0f172a" stroke="#64748b" stroke-width="2"/>${chargingFX}</svg>`;
+      } else if (type === 1) {
+        return `<svg class="w-full h-32 mx-auto transition-transform duration-500 hover:scale-105" viewBox="0 0 240 100" fill="none"><circle cx="70" cy="70" r="16" fill="none" stroke="${baseColor}" stroke-width="4"/><circle cx="170" cy="70" r="16" fill="none" stroke="${baseColor}" stroke-width="4"/><path d="M70 70 L100 40 L150 40 L170 70" fill="none" stroke="${baseColor}" stroke-width="5" stroke-linejoin="round"/><path d="M100 40 L90 20" fill="none" stroke="${baseColor}" stroke-width="4" stroke-linecap="round"/><path d="M80 20 L100 20" fill="none" stroke="${baseColor}" stroke-width="4" stroke-linecap="round"/>${chargingFX}</svg>`;
+      } else {
+        return `<svg class="w-full h-32 mx-auto transition-transform duration-500 hover:scale-105" viewBox="0 0 240 100" fill="none"><path d="M40 72 C40 72 35 58 48 54 C60 50 74 50 90 40 C108 30 125 25 165 25 C190 25 210 40 220 50 C228 58 232 66 232 72 C232 78 225 80 215 80 L55 80 C45 80 40 78 40 72 Z" fill="${baseColor}" stroke="${strokeCol}" stroke-width="2"/><path d="M95 41 L165 29 C182 29 200 40 208 50 L85 50 C88 45 91 42 95 41 Z" fill="${accentColor}" opacity="0.9" /><circle cx="75" cy="78" r="14" fill="#0f172a" stroke="#64748b" stroke-width="2.5"/><circle cx="190" cy="78" r="14" fill="#0f172a" stroke="#64748b" stroke-width="2.5"/>${chargingFX}</svg>`;
+      }
+    }
+
+    function computeLogisticRegression(dayOfWeek, hourOfDay) {
+      let z = -1.4260217881 + (0.0099247663 * dayOfWeek) + (0.1213530798 * hourOfDay);
+      return 1.0 / (1.0 + Math.exp(-z));
+    }
+
+    function updateRemainingPowerMeter(consumedW) {
+      const availableW = Math.max(0, MAX_STATION_CAPACITY_W - consumedW);
+      const availablePct = (availableW / MAX_STATION_CAPACITY_W) * 100;
+      
+      document.getElementById('remaining-power-val').textContent = availableW.toFixed(1);
+      document.getElementById('consumed-text').textContent = consumedW.toFixed(0) + ' W';
+
+      const container = document.getElementById('battery-cells');
+      container.innerHTML = '';
+      const cellsToFill = Math.round((availablePct / 100) * 10);
+      
+      for(let i=0; i<10; i++) {
+        const div = document.createElement('div');
+        if (i < cellsToFill) {
+          if (availablePct < 20) div.className = 'flex-1 rounded-xl bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.6)]';
+          else if (availablePct < 50) div.className = 'flex-1 rounded-xl bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.6)]';
+          else div.className = 'flex-1 rounded-xl bg-energy-flow shadow-[0_0_12px_rgba(37,99,235,0.4)]';
+        } else div.className = 'flex-1 rounded-xl bg-slate-200';
+        container.appendChild(div);
+      }
+
+      const powerBadge = document.getElementById('power-badge');
+      if (availableW === 0) {
+        powerBadge.className = "px-3 py-1 rounded-full text-xs font-bold uppercase bg-rose-50 text-rose-700 border border-rose-200 animate-pulse";
+        powerBadge.textContent = "Overloaded";
+      } else {
+        powerBadge.className = "px-3 py-1 rounded-full text-xs font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200";
+        powerBadge.textContent = "Optimal";
+      }
+    }
+
+    function renderForecast(tDay, tTime) {
+      const forecastContainer = document.getElementById('forecast-bars');
+      forecastContainer.innerHTML = '';
+      let maxProb = -1, peakHour = -1, forecastHtml = '';
+
+      for(let i=1; i<=4; i++) {
+        let nextHour = (tTime + i) % 24;
+        let nextDay = (tDay + Math.floor((tTime + i) / 24)) % 7;
+        let prob = computeLogisticRegression(nextDay, nextHour);
+        if (prob > maxProb) { maxProb = prob; peakHour = nextHour; }
+
+        let probPct = Math.round(prob * 100);
+        let barColor = probPct >= 60 ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]' : 
+                       (probPct >= 30 ? 'bg-blue-500' : 'bg-emerald-400');
+
+        forecastHtml += `
+          <div class="flex flex-col items-center flex-1 h-full justify-end">
+            <span class="text-[9px] font-bold text-slate-500 mb-1">${probPct}%</span>
+            <div class="w-full bg-slate-100 rounded-t-md relative flex items-end h-[60px]">
+              <div class="w-full rounded-t-md ${barColor} transition-all duration-700" style="height: ${probPct}%"></div>
+            </div>
+            <span class="text-[10px] font-bold text-slate-700 mt-1">${nextHour}:00</span>
+          </div>`;
+      }
+      forecastContainer.innerHTML = forecastHtml;
+      
+      const peakAlert = document.getElementById('peak-alert');
+      if(maxProb >= 0.6) {
+        peakAlert.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-rose-50 text-rose-600 border border-rose-200";
+        peakAlert.innerHTML = `⚠️ Peak Expected at ${peakHour}:00 (${Math.round(maxProb*100)}%)`;
+      } else {
+        peakAlert.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-200";
+        peakAlert.innerHTML = `Max Load at ${peakHour}:00 (${Math.round(maxProb*100)}%)`;
+      }
+    }
+
+    function renderBays(bays) {
+      const container = document.getElementById('bays-grid');
+      if(container.children.length === 0) {
+        bays.forEach((_, index) => {
+          const card = document.createElement('div');
+          card.id = `bay-card-${index}`;
+          card.className = "bg-white border-2 border-slate-200 rounded-3xl p-6 shadow-sm hover-lift transition-all flex flex-col justify-between";
+          container.appendChild(card);
+        });
+      }
+
+      bays.forEach((bay, index) => {
+        let state = window.bayStates[index] || { soc: bay.initialSoc };
+        const isCharging = (bay.status === 'CHARGING');
+        const isFull = (state.soc >= 100 && isCharging);
+        
+        let displayPower = (isCharging && !isFull) ? bay.power : 0;
+        let displayCurrent = (isCharging && !isFull) ? (bay.power / 220) : 0;
+        
+        let logicDisplay = isFull ? 'COMPLETE' : (isCharging ? bay.loadDecision : 'STANDBY');
+        let throttleDisplay = (isCharging && !isFull) ? bay.throttleLevel : 0;
+        let systemReason = "Terminal is idle. Awaiting vehicle connection.";
+
+        if (isCharging) {
+          if (isFull) {
+            systemReason = "Battery 100% charged. Relay disconnected securely.";
+          } else {
+            if (bay.overloadActive) systemReason = "Hardware Overcurrent Detected. Safety throttle engaged.";
+            else if (bay.loadDecision === 'THROTTLE') systemReason = "Grid congestion limit reached. Load shedding active.";
+            else if (bay.initialSoc <= 15) systemReason = "Low battery priority override. Full power allocated.";
+            else systemReason = "Grid headroom optimal. Full power allocated.";
+          }
+        }
+
+        const card = document.getElementById(`bay-card-${index}`);
+        if (isFull) card.style.borderColor = '#10b981';
+        else if (bay.overloadActive) card.style.borderColor = '#fcd34d'; 
+        else if (isCharging) card.style.borderColor = '#93c5fd'; 
+        else card.style.borderColor = '#e2e8f0'; 
+
+        const vTypeLabel = bay.vehicleType === 3 ? "Bus" : bay.vehicleType === 1 ? "2-Wheeler" : "Car";
+        
+        let statusBadge = isCharging 
+          ? (isFull 
+              ? `<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">100% Full</span>`
+              : `<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-blue-50 text-blue-700 border border-blue-200"><span class="w-1.5 h-1.5 inline-block rounded-full bg-blue-600 mr-1 charging-pulse"></span>Active</span>`)
+          : `<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-slate-100 text-slate-500 border border-slate-200">Free</span>`;
+
+        if (bay.overloadActive && !isFull && isCharging) {
+          statusBadge = `<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">Throttled</span>`;
+        }
+
+        let logicColor = (isFull) ? 'text-emerald-600' : (isCharging && throttleDisplay < 100) ? 'text-amber-600' : 'text-slate-900';
+
+        card.innerHTML = `
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="text-xl font-black text-slate-900">Terminal ${index + 1}</h3>
+              ${statusBadge}
+            </div>
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Detected: ${vTypeLabel}</div>
+            
+            <div class="py-4 mb-4 bg-slate-50 rounded-2xl flex justify-center items-center">
+              ${getVehicleSvg(bay.vehicleType, isCharging, bay.overloadActive, isFull)}
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-4">
+              <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                <span class="block text-[10px] uppercase font-bold text-slate-400">Power Draw</span>
+                <span class="text-lg font-black text-slate-900 font-mono-num">${displayPower.toFixed(0)} <span class="text-xs">W</span></span>
+              </div>
+              <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                <span class="block text-[10px] uppercase font-bold text-slate-400">Current</span>
+                <span class="text-lg font-black text-slate-900 font-mono-num">${displayCurrent.toFixed(1)} <span class="text-xs">A</span></span>
+              </div>
+              <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                <span class="block text-[10px] uppercase font-bold text-slate-400">Live SOC</span>
+                <span class="text-lg font-black ${isFull ? 'text-emerald-600' : (isCharging ? 'text-blue-600' : 'text-slate-900')} font-mono-num">${state.soc.toFixed(1)}%</span>
+              </div>
+              <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                <span class="block text-[10px] uppercase font-bold text-slate-400">Firmware Logic</span>
+                <span class="text-sm font-black ${logicColor} tracking-wide">${logicDisplay} <span class="text-xs">(${throttleDisplay}%)</span></span>
+              </div>
+            </div>
+
+            <div class="w-full bg-slate-100/80 rounded-xl p-3 border border-slate-200 mt-2">
+              <span class="block text-[9px] uppercase font-bold text-slate-400 mb-0.5">System Status Reason</span>
+              <span class="text-xs font-semibold ${isFull ? 'text-emerald-700' : (isCharging && throttleDisplay < 100 ? 'text-amber-700' : 'text-slate-600')} leading-tight block">
+                ${systemReason}
+              </span>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    async function fetchData() {
+      try {
+        const res = await fetch('/api/station-status');
+        const data = await res.json();
+        
+        let tDay, tTime;
+        if (USE_RTC) {
+          const now = new Date();
+          tDay = now.getDay();
+          tTime = now.getHours();
+          document.getElementById('clock-mode-label').textContent = "Local RTC Clock";
+        } else {
+          tDay = data.bays[0].Day || 6;
+          tTime = data.bays[0].Time || 15;
+          document.getElementById('clock-mode-label').textContent = "Telemetry Clock";
+        }
+        
+        document.getElementById('telemetry-time').textContent = `Day: ${DAYS[tDay] || tDay} | Time: ${tTime}:00`;
+        
+        const arrivalProb = computeLogisticRegression(tDay, tTime);
+        const pct = Math.round(arrivalProb * 100);
+        
+        document.getElementById('arrival-val').textContent = pct + '%';
+        const circle = document.getElementById('ml-circle');
+        circle.setAttribute('stroke-dasharray', `${pct}, 100`);
+
+        const desc = document.getElementById('arrival-desc');
+        if (pct >= 60) {
+          circle.setAttribute('stroke', '#f43f5e');
+          desc.innerHTML = '<span class="text-rose-600 font-bold flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg> High Congestion Projected</span>';
+        } else if (pct >= 30) {
+          circle.setAttribute('stroke', '#3b82f6');
+          desc.innerHTML = '<span class="text-blue-600 font-bold">Moderate Traffic Influx</span>';
+        } else {
+          circle.setAttribute('stroke', '#10b981');
+          desc.innerHTML = '<span class="text-emerald-600 font-bold">Clear Station Availability</span>';
+        }
+
+        renderForecast(tDay, tTime);
+
+        // Core State Engine Updates with strict transition monitoring
+        let consumed = 0;
+        data.bays.forEach((bay, index) => { 
+          if (!window.bayStates[index]) {
+            window.bayStates[index] = { soc: bay.initialSoc, lastStatus: bay.status };
+          }
+          
+          let state = window.bayStates[index];
+
+          // 1. Exact Plug-in Event Detection (Transition from FREE -> CHARGING)
+          if (state.lastStatus === 'FREE' && bay.status === 'CHARGING') {
+            state.soc = bay.initialSoc; 
+          } 
+          // 2. Exact Plug-out / Idle Detection (Force to initial telemetry SOC)
+          else if (bay.status === 'FREE') {
+            state.soc = bay.initialSoc;
+          }
+
+          // Update memory for next tick
+          state.lastStatus = bay.status;
+
+          // 3. Mathematical Physics Simulation
+          if (bay.status === 'CHARGING' && state.soc < 100) {
+            let timeHours = (UPDATE_INTERVAL_SEC * SIM_SPEED_MULTIPLIER) / 3600; 
+            let energyAdded = bay.power * timeHours; 
+            let capacity = bay.batteryCapacity || 5000;
+            let socAdded = (energyAdded / capacity) * 100;
+            
+            state.soc += socAdded;
+            if (state.soc > 100) state.soc = 100;
+            
+            // Add grid load ONLY if not full
+            if (state.soc < 100) {
+              consumed += bay.power; 
+            }
+          }
+        });
+        
+        updateRemainingPowerMeter(consumed);
+        renderBays(data.bays);
+        
+        document.getElementById('sync-label').textContent = 'Live Telemetry Active';
+      } catch(e) {
+        console.error(e);
+      }
+    }
+
+    setInterval(fetchData, UPDATE_INTERVAL_SEC * 1000);
+    fetchData();
+  </script>
+</body>
+</html>
